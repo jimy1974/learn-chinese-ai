@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chinese Learning Tool</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            line-height: 1.6;
+        }
+        #characters { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            margin-top: 20px; 
+        }
+        .character-card { 
+            border: 1px solid #ddd; 
+            padding: 15px; 
+            cursor: pointer; 
+            text-align: center;
+            width: 100px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .character-card:hover {
+            background-color: #f0f0f0;
+            transform: scale(1.05);
+        }
+        .character-details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        #sentenceTranslation {
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chinese Learning Tool</h1>
+    <button id="loadChinese">Load Chinese Sentence</button>
+    <div id="sentenceTranslation"></div>
+    <div id="characters"></div>
+    <div id="characterDetails"></div>
+
+    <script>
+       document.getElementById('loadChinese').addEventListener('click', async () => {
+    try {
+        const response = await fetch('/generate-chinese', { method: 'POST' });
+        const data = await response.json();
+
+        // Display full sentence and translation
+        document.getElementById('sentenceTranslation').innerHTML = 
+            `<p><strong>Sentence:</strong> ${data.chineseText}</p>` +
+            `<p><strong>Translation:</strong> ${data.fullTranslation}</p>`;
+
+        // Display character cards with context-specific translations
+        const charactersContainer = document.getElementById('characters');
+        charactersContainer.innerHTML = '';
+        const detailsContainer = document.getElementById('characterDetails');
+        
+        data.characters.forEach(char => {
+            const charDiv = document.createElement('div');
+            charDiv.classList.add('character-card');
+            charDiv.innerHTML = `
+                <div style="font-size: 2em; margin-bottom: 10px;">${char.character}</div>
+                <div style="font-size: 0.9em; color: #666;">${char.contextMeaning}</div>
+            `;
+            
+            charDiv.addEventListener('click', () => {
+    // Dynamically generate the audio URL
+    char.audioUrl = `/proxy-audio?text=${encodeURIComponent(char.character)}`;
+    
+    // Update details with character information and play audio
+    detailsContainer.innerHTML = `
+        <div class="character-details">
+            <h2 style="margin-top: 0;">${char.character}</h2>
+            <p><strong>Context Meaning:</strong> ${char.contextMeaning}</p>
+            <audio controls autoplay style="margin-top: 10px;">
+                <source src="${char.audioUrl}" type="audio/mpeg">
+                Your browser does not support the audio element.
+            </audio>
+        </div>
+    `;
+
+    // Play audio immediately
+    const audio = detailsContainer.querySelector('audio');
+    audio.play().catch(err => console.error('Audio play error:', err));
+});
+
+            
+            charactersContainer.appendChild(charDiv);
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to load Chinese content. Please try again.');
+    }
+});
+
+
+    </script>
+</body>
+</html>
